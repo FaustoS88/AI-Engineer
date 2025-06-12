@@ -4,6 +4,10 @@
 
 AI Engineer is a powerful AI-powered coding assistant with multi-provider support that provides an interactive terminal interface for seamless code development. It integrates with multiple LLM providers including DeepSeek's advanced reasoning models and OpenRouter's diverse model selection to offer intelligent file operations, code analysis, and development assistance through natural conversation and function calling.
 
+## Quick demo
+
+![AI Engineer in action](./assets/demo.gif)
+
 ## 🚀 Multi-Provider Support
 
 - **Multiple AI Providers**: Support for DeepSeek and OpenRouter
