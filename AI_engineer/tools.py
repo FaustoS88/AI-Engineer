@@ -4,7 +4,8 @@
 # Function Calling Tools Definitions
 # --------------------------------------------------------------------------------
 
-tools = [
+# Base AI-Engineer tools for file operations
+base_tools = [
     {
         "type": "function",
         "function": {
@@ -112,3 +113,55 @@ tools = [
         }
     }
 ]
+
+def get_mcp_tools_openai_format():
+    """Get MCP tools in OpenAI function calling format using the new Pydantic AI MCP integration."""
+    try:
+        from .pydantic_mcp_integration import get_manager
+        
+        # Get the Pydantic MCP manager
+        manager = get_manager()
+        
+        # Initialize if not already initialized
+        if not manager._initialized:
+            manager.initialize()
+        
+        # Now check if we have servers
+        if not manager.mcp_servers:
+            # This is fine - means no MCP servers are configured, not an error
+            return []
+        
+        # The new system doesn't need to extract raw schemas - Pydantic AI handles this
+        # We'll return an empty list for now since the new system uses Pydantic AI tools directly
+        print(f"ℹ️ Using new Pydantic AI MCP integration with {len(manager.mcp_servers)} server(s) - tools are handled directly by agent")
+        return []
+        
+    except Exception as e:
+        print(f"❌ Failed to get MCP tools: {e}")
+        import traceback
+        traceback.print_exc()
+        return []
+
+def _is_valid_openai_function_name(name: str) -> bool:
+    """Check if a function name meets OpenAI's requirements."""
+    import re
+    # OpenAI function names should use only: letters, numbers, underscores (no hyphens)
+    # This matches our sanitization approach
+    if not name or len(name) > 64:
+        return False
+    return bool(re.match(r'^[a-zA-Z0-9_]+$', name))
+
+def get_all_tools():
+    """Get all tools including base tools and MCP tools."""
+    all_tools = base_tools.copy()
+    mcp_tools = get_mcp_tools_openai_format()
+    all_tools.extend(mcp_tools)
+    return all_tools
+
+# Dynamic tools that includes MCP tools
+tools = get_all_tools()
+
+def refresh_tools():
+    """Refresh the tools list to include newly loaded MCP tools."""
+    global tools
+    tools = get_all_tools()

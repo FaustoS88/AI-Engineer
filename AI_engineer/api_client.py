@@ -4,7 +4,7 @@ import json
 import time
 
 from .config import (
-    get_client, console, get_current_model, 
+    get_client, console, get_current_model,
     get_provider_headers, get_provider_extra_body, supports_reasoning
 )
 from .tools import tools
@@ -19,11 +19,20 @@ from .error_detection import run_linter_auto, is_supported_file
 # OpenAI API Integration and Function Execution
 # --------------------------------------------------------------------------------
 
+# Pydantic AI agent handles MCP tool execution
+def execute_mcp_tool(function_name: str, arguments: dict) -> str:
+    """Legacy MCP tool execution - now handled by Pydantic AI agent."""
+    return f"Error: Legacy MCP tool execution disabled. Using Pydantic AI agent instead."
+
 def execute_function_call_dict(tool_call_dict) -> str:
     """Execute a function call from a dictionary format and return the result as a string."""
     try:
         function_name = tool_call_dict["function"]["name"]
         arguments = json.loads(tool_call_dict["function"]["arguments"])
+        
+        # Check if this is an MCP tool (contains server prefix)
+        if "_" in function_name and function_name not in ["read_file", "create_file", "edit_file", "read_multiple_files", "create_multiple_files"]:
+            return execute_mcp_tool(function_name, arguments)
         
         if function_name == "read_file":
             file_path = arguments["file_path"]
@@ -105,6 +114,10 @@ def execute_function_call(tool_call) -> str:
         function_name = tool_call.function.name
         arguments = json.loads(tool_call.function.arguments)
         
+        # Check if this is an MCP tool (contains server prefix)
+        if "_" in function_name and function_name not in ["read_file", "create_file", "edit_file", "read_multiple_files", "create_multiple_files"]:
+            return execute_mcp_tool(function_name, arguments)
+        
         if function_name == "read_file":
             file_path = arguments["file_path"]
             normalized_path = normalize_path(file_path)
@@ -180,28 +193,117 @@ def execute_function_call(tool_call) -> str:
         return f"Error executing {function_name}: {str(e)}"
 
 def stream_openai_response(user_message: str):
-    """Stream response from OpenAI API with recursive function calling support."""
-    # Get the current client
+    """
+    Primary function for AI responses using recursive function calling system.
+    Uses MCP/Pydantic AI intelligently as enhancement when library research is needed.
+    """
     client = get_client()
-    if not client:
-        return {"error": "No valid API client available. Please check your API keys."}
-    
     current_model = get_current_model()
     
-    # Add the user message to conversation history
+    # Add user message to conversation history
     conversation_history.append({"role": "user", "content": user_message})
-    
-    # Trim conversation history if it's getting too long
     trim_conversation_history()
-
-    try:
-        # Start the recursive function calling loop
+    
+    # Intelligent approach selection: Check if user needs library research or documentation
+    needs_mcp = _should_use_mcp(user_message)
+    
+    if needs_mcp:
+        console.print("\n[bold bright_blue]🤖 AI Engineer (with MCP Research)>[/bold bright_blue]")
+        return _handle_mcp_enhanced_query(user_message)
+    else:
+        # Use proven recursive function calling system by default
         return _recursive_function_calling_loop(client, current_model)
 
+def _should_use_mcp(user_message: str) -> bool:
+    """
+    Determine if the query needs MCP tools for library research, documentation, or external services.
+    """
+    mcp_keywords = [
+        # Research & Documentation
+        "documentation", "docs", "library", "package", "framework", "api reference",
+        "how to use", "tutorial", "guide", "example", "context7", "research",
+        # Crypto & Trading (CCXT server)
+        "price", "btc", "bitcoin", "ethereum", "eth", "crypto", "cryptocurrency",
+        "trading", "exchange", "binance", "coinbase", "kraken", "market", "ccxt", "cctx",
+        # MCP Server mentions
+        "mcp server", "mcp tool", "use mcp", "fetch", "get price", "market data"
+    ]
+    
+    message_lower = user_message.lower()
+    return any(keyword in message_lower for keyword in mcp_keywords)
+
+def _handle_mcp_enhanced_query(user_message: str):
+    """
+    Handle queries that need MCP tools with fallback to recursive calling.
+    """
+    try:
+        from .pydantic_mcp_integration import query_ai
+        
+        # Use MCP for research/documentation queries
+        response = query_ai(user_message)
+        
+        # Add the assistant's response to conversation history
+        conversation_history.append({"role": "assistant", "content": response})
+        
+        # Stream the response character by character for the UI effect
+        for char in response:
+            console.print(char, end="")
+        
+        console.print()  # New line after streaming
+        console.print(f"[dim]✅ Task completed using MCP research tools[/dim]")
+        
+        return {"success": True}
+        
     except Exception as e:
-        error_msg = f"API error: {str(e)}"
-        console.print(f"\n[bold red]❌ {error_msg}[/bold red]")
-        return {"error": error_msg}
+        console.print(f"\n[yellow]⚠️  MCP fallback failed: {str(e)}[/yellow]")
+        console.print("[cyan]🔄 Falling back to recursive function calling...[/cyan]")
+        
+        # Fallback to recursive calling system
+        client = get_client()
+        current_model = get_current_model()
+        return _recursive_function_calling_loop(client, current_model)
+
+
+def _is_trivial_iteration(tool_calls):
+    """
+    Detect if the current iteration involves only trivial edits (spacing, formatting, etc.)
+    to prevent infinite loops on minor issues.
+    """
+    if not tool_calls:
+        return False
+    
+    trivial_keywords = [
+        "blank line", "spacing", "whitespace", "indentation",
+        "extra blank", "remove blank", "add blank", "pep 8",
+        "two blank lines", "blank lines between", "trailing whitespace"
+    ]
+    
+    for tool_call in tool_calls:
+        if tool_call['function']['name'] == 'edit_file':
+            try:
+                # Check if the arguments suggest trivial formatting changes
+                args = json.loads(tool_call['function']['arguments'])
+                original = args.get('original_snippet', '').lower()
+                new = args.get('new_snippet', '').lower()
+                
+                # If the content is very similar and involves spacing/formatting
+                if len(original.strip()) > 0 and len(new.strip()) > 0:
+                    # Check if changes are only whitespace/formatting
+                    original_no_space = ''.join(original.split())
+                    new_no_space = ''.join(new.split())
+                    
+                    if original_no_space == new_no_space:  # Only whitespace changes
+                        return True
+                        
+                # Check for trivial keyword patterns
+                combined_text = (original + ' ' + new).lower()
+                if any(keyword in combined_text for keyword in trivial_keywords):
+                    return True
+                    
+            except (json.JSONDecodeError, KeyError):
+                continue
+    
+    return False
 
 
 def _recursive_function_calling_loop(client, current_model, max_iterations=10):
@@ -217,16 +319,20 @@ def _recursive_function_calling_loop(client, current_model, max_iterations=10):
         dict: Success or error response
     """
     iteration = 0
+    consecutive_trivial_iterations = 0  # Track trivial edits to prevent infinite loops
     
     while iteration < max_iterations:
         iteration += 1
         console.print(f"\n[dim]🔄 Iteration {iteration}[/dim]")
         
+        # Use the proper tools from the tools module for recursive function calling
+        current_tools = tools
+        
         # Prepare request parameters
         request_params = {
             "model": current_model,
             "messages": conversation_history,
-            "tools": tools,
+            "tools": current_tools,
             "max_completion_tokens": 64000,
             "stream": True
         }
@@ -253,7 +359,7 @@ def _recursive_function_calling_loop(client, current_model, max_iterations=10):
         tool_calls = []
 
         for chunk in stream:
-            # Handle reasoning content if available (only for DeepSeek models)
+            # Handle reasoning content if available (mostly for DeepSeek R1 model)
             if (supports_reasoning() and
                 hasattr(chunk.choices[0].delta, 'reasoning_content') and
                 chunk.choices[0].delta.reasoning_content):
@@ -300,6 +406,7 @@ def _recursive_function_calling_loop(client, current_model, max_iterations=10):
         if tool_calls:
             # Convert our tool_calls format to the expected format
             formatted_tool_calls = []
+            
             for i, tc in enumerate(tool_calls):
                 if tc["function"]["name"]:  # Only add if we have a function name
                     # Ensure we have a valid tool call ID
@@ -315,15 +422,34 @@ def _recursive_function_calling_loop(client, current_model, max_iterations=10):
                     })
             
             if formatted_tool_calls:
-                # Important: When there are tool calls, content should be None or empty
-                if not final_content:
-                    assistant_message["content"] = None
+                # CRITICAL: OpenAI requires content=None when tool_calls are present
+                # But we keep the explanatory text for the user experience
+                user_explanation = final_content if final_content and final_content.strip() else None
+                assistant_message["content"] = None  # Always None when tool_calls present
                     
                 assistant_message["tool_calls"] = formatted_tool_calls
                 conversation_history.append(assistant_message)
                 
+                # Show user explanation if it existed (for user experience)
+                if user_explanation:
+                    console.print(f"\n{user_explanation}")
+                
                 # Execute tool calls and add results immediately
                 console.print(f"\n[bold bright_cyan]⚡ Executing {len(formatted_tool_calls)} function call(s)...[/bold bright_cyan]")
+                
+                # Check if these are trivial edits (spacing, formatting only)
+                is_trivial_iteration = _is_trivial_iteration(formatted_tool_calls)
+                if is_trivial_iteration:
+                    consecutive_trivial_iterations += 1
+                else:
+                    consecutive_trivial_iterations = 0
+                
+                # Stop if we've had too many consecutive trivial iterations
+                if consecutive_trivial_iterations >= 3:
+                    console.print(f"[yellow]⚠️  Stopping after {consecutive_trivial_iterations} consecutive trivial edits to prevent infinite loop.[/yellow]")
+                    console.print(f"[dim]✅ Task completed with minor formatting variations after {iteration} iteration(s)[/dim]")
+                    break
+                
                 for tool_call in formatted_tool_calls:
                     console.print(f"[bright_blue]→ {tool_call['function']['name']}[/bright_blue]")
                     
@@ -340,17 +466,23 @@ def _recursive_function_calling_loop(client, current_model, max_iterations=10):
                     except Exception as e:
                         console.print(f"[red]Error executing {tool_call['function']['name']}: {e}[/red]")
                         # Still need to add a tool response even on error
-                        conversation_history.append({
+                        error_response = {
                             "role": "tool",
                             "tool_call_id": tool_call["id"],
                             "content": f"Error: {str(e)}"
-                        })
+                        }
+                        conversation_history.append(error_response)
                 
                 # Continue the loop to check for more function calls
                 console.print(f"[dim]✅ Function calls completed. Checking for additional actions...[/dim]")
                 continue
         else:
             # No tool calls, store the response and exit the loop
+            # CRITICAL FIX: Ensure assistant messages always have content or tool_calls
+            has_content = assistant_message["content"] is not None and assistant_message["content"].strip()
+            if not has_content:
+                assistant_message["content"] = "I have completed the analysis."
+            
             conversation_history.append(assistant_message)
             console.print(f"[dim]✅ Task completed after {iteration} iteration(s)[/dim]")
             break

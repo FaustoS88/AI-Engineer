@@ -38,6 +38,11 @@ PROVIDERS = {
         base_url="https://openrouter.ai/api/v1",
         api_key_env="OPENROUTER_API_KEY",
         extra_body={}
+    ),
+    "mcp": ProviderConfig(
+        name="MCP Local",
+        base_url="http://localhost",  # Not used, but keeps interface happy
+        api_key_env=""  # No API key needed for MCP
     )
 }
 

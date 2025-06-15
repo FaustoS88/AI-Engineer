@@ -40,6 +40,12 @@ def display_instructions():
   • [bright_cyan]/model set <model_name>[/bright_cyan] - Switch to a specific model
   • [bright_cyan]/model current[/bright_cyan] - Show currently selected model
 
+[bold bright_green]🔌 MCP (Model Context Protocol):[/bold bright_green]
+  • [bright_cyan]/mcp list[/bright_cyan] - Show all MCP servers and their tools
+  • [bright_cyan]/mcp enable <server>[/bright_cyan] - Enable an MCP server
+  • [bright_cyan]/mcp disable <server>[/bright_cyan] - Disable an MCP server
+  • [bright_cyan]/mcp reload[/bright_cyan] - Reload MCP configuration
+
 [bold bright_green]🎯 Commands:[/bold bright_green]
   • [bright_cyan]exit[/bright_cyan] or [bright_cyan]quit[/bright_cyan] - End the session
   • Just ask naturally - the AI will handle file operations automatically!"""

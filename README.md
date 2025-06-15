@@ -33,6 +33,13 @@ AI Engineer is a powerful AI-powered coding assistant with multi-provider suppor
 
 ## Key Features
 
+### 🔌 **MCP Integration** ⭐
+- **Model Context Protocol Support**: Extend AI capabilities with external tools and resources
+- **Context7 Documentation Research**: Instant access to up-to-date library documentation
+- **Hot-Reloadable MCP Servers**: Dynamic server management without restarts
+- **Comprehensive MCP Commands**: Full control over MCP server lifecycle
+- **Library Research Assistant**: Get current docs, examples, and best practices for any library
+
 ### 🧠 **AI Capabilities**
 - **Elite Software Engineering**: Decades of experience across all programming domains
 - **Multi-Provider Support**: Access to various AI models and capabilities
@@ -54,7 +61,7 @@ AI Engineer is a powerful AI-powered coding assistant with multi-provider suppor
 - **Automatic Setup Detection**: Works with existing project configurations
 - **Extensible Architecture**: Easy to add support for more languages
 
-### �️ **Function Calling Tools**
+### **Function Calling Tools**
 The AI can automatically execute these operations when needed:
 
 #### `read_file(file_path: str)`
@@ -84,7 +91,13 @@ The AI can automatically execute these operations when needed:
 - **`/model set <model_name>`** - Switch to a specific model
 - **Dynamic switching** - Change models during conversation
 
-### 📁 **File Operations**
+### 🔌 **MCP Management**
+- **`/mcp list`** - Show all configured MCP servers and their status
+- **`/mcp enable <server>`** - Enable a specific MCP server
+- **`/mcp disable <server>`** - Disable a specific MCP server
+- **`/mcp reload`** - Reload MCP configuration without restart
+
+### **File Operations**
 
 #### **Automatic File Reading (Recommended)**
 The AI can automatically read files you mention:
@@ -319,6 +332,65 @@ You (Openrouter)> Now analyze the same code with a different perspective
 → read_file
 ```
 
+### **🔌 MCP Integration Examples**
+
+#### **Context7 Library Research**
+```
+You> Research the latest Pydantic AI documentation and show me examples
+
+🤖 AI Engineer> I'll research the latest Pydantic AI documentation for you.
+⚡ Using MCP server: Context7
+→ resolve-library-id
+✓ Found library: /pydantic/pydantic-ai
+
+→ get-library-docs
+✓ Retrieved latest documentation and examples
+
+Based on the latest Pydantic AI documentation, here are the key features and examples:
+
+## Pydantic AI Overview
+Pydantic AI is a Python agent framework designed to make it less painful to build production-grade applications with generative AI...
+
+[Detailed documentation and code examples follow]
+```
+
+#### **MCP Server Management**
+```
+You> /mcp list
+
+🔌 MCP Server Status:
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Server Name               ┃ Description                              ┃ Status                                 ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ context7                  │ Context7 MCP Server for library docs    │ 🟢 Active (2 tools available)         │
+└───────────────────────────┴──────────────────────────────────────────┴────────────────────────────────────────┘
+
+You> /mcp reload
+✅ MCP configuration reloaded successfully
+🔄 All active servers reinitialized with new configuration
+```
+
+#### **Dynamic Library Research**
+```
+You> I need to understand how to use FastAPI with async database operations
+
+🤖 AI Engineer> I'll research the latest FastAPI documentation focusing on async database operations.
+⚡ Using MCP server: Context7
+→ resolve-library-id
+✓ Found library: /tiangolo/fastapi
+
+→ get-library-docs
+✓ Retrieved focused documentation on async database operations
+
+Here's what I found about FastAPI async database operations:
+
+## Async Database Operations in FastAPI
+[Current documentation with examples follows...]
+
+Would you like me to create example code based on these patterns?
+```
+
 ## Technical Details
 
 ### **Multi-Provider Architecture**
@@ -362,6 +434,67 @@ You> Create a complete Flask API with models, routes, and tests
 ✓ Created 4 files: app.py, models.py, routes.py, test_api.py
 ```
 
+## 🔌 MCP (Model Context Protocol) Integration
+
+AI Engineer includes powerful MCP integration that extends the AI's capabilities with external tools and resources. This enables real-time access to up-to-date documentation, APIs, and specialized tools.
+
+### **Available MCP Servers**
+
+#### **Context7 Documentation Research**
+- **Server**: `context7`
+- **Purpose**: Retrieve up-to-date documentation and examples for any library
+- **Tools**:
+  - `resolve-library-id`: Find the correct library identifier
+  - `get-library-docs`: Fetch focused documentation and examples
+- **Usage**: Automatically used when you ask about libraries, frameworks, or need current documentation
+
+### **MCP Configuration**
+
+MCP servers are configured in `mcp.config.json`:
+```json
+{
+  "servers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"],
+      "description": "Context7 MCP Server for library docs",
+      "enabled": true
+    }
+  }
+}
+```
+-for the Brave Search MCP, remember to add the brave api key in the mcp.config.json file
+
+```json
+{
+  "servers": {
+    "brave-search": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+      "env": {
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      },
+      "description": "Brave Search MCP Server for web search",
+      "enabled": true
+    }
+  }
+}
+```
+
+### **MCP Features**
+- **Hot-Reloadable**: Changes to MCP configuration take effect without restart
+- **Lazy Initialization**: Servers start only when needed to improve performance
+- **Error Handling**: Graceful fallbacks when MCP servers are unavailable
+- **Status Monitoring**: Real-time status of all configured servers
+- **Dynamic Management**: Enable/disable servers during runtime
+
+### **How MCP Enhances AI Engineer**
+1. **Current Documentation**: Always get the latest docs, not outdated training data
+2. **Library Research**: Instant access to documentation for any library or framework
+3. **Code Examples**: Get working examples and best practices
+4. **API References**: Access to current API documentation and usage patterns
+5. **Extensibility**: Easy to add new MCP servers for specialized capabilities
+
 ## Commands Reference
 
 | Command | Description | Example |
@@ -369,6 +502,10 @@ You> Create a complete Flask API with models, routes, and tests
 | `/model list` | Show all available models | `/model list` |
 | `/model current` | Show current model | `/model current` |
 | `/model set <name>` | Switch to model | `/model set anthropic/claude-3.5-sonnet` |
+| `/mcp list` | Show MCP server status | `/mcp list` |
+| `/mcp enable <server>` | Enable MCP server | `/mcp enable context7` |
+| `/mcp disable <server>` | Disable MCP server | `/mcp disable context7` |
+| `/mcp reload` | Reload MCP configuration | `/mcp reload` |
 | `/add <path>` | Add file/folder to context | `/add src/utils.py` |
 | `exit` or `quit` | End session | `exit` |
 

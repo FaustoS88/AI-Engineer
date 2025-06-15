@@ -1,0 +1,25 @@
+{
+  "mcpServers": {
+    "github.com/upstash/context7-mcp": {
+      "autoApprove": [],
+      "disabled": false,
+      "timeout": 60,
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@latest"
+      ],
+      "transportType": "stdio"
+    },
+    "brave-search": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-brave-search"
+      ],
+      "env": {
+        "BRAVE_API_KEY": "your-Brave-api-key"
+      }
+    }
+  }
+}

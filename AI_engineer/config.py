@@ -159,3 +159,22 @@ def display_startup_info():
 
 # Legacy client for backward compatibility (will be deprecated)
 client = get_client()
+
+# --------------------------------------------------------------------------------
+# Pydantic AI MCP Integration
+# --------------------------------------------------------------------------------
+
+from .pydantic_mcp_integration import get_manager, init_pydantic_mcp
+
+def get_pydantic_mcp_manager():
+    """Return the Pydantic MCP manager instance."""
+    return get_manager()
+
+def init_ai_system():
+    """Initialize the AI system with Pydantic AI and MCP integration."""
+    try:
+        console.print("[dim]🤖 Initializing AI system...[/dim]")
+        init_pydantic_mcp()
+        console.print("[dim green]✅ AI system ready[/dim green]")
+    except Exception as e:
+        console.print(f"[dim red]⚠️ AI system initialization failed: {e}[/dim red]")
