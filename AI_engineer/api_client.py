@@ -22,7 +22,7 @@ from .error_detection import run_linter_auto, is_supported_file
 # Pydantic AI agent handles MCP tool execution
 def execute_mcp_tool(function_name: str, arguments: dict) -> str:
     """Legacy MCP tool execution - now handled by Pydantic AI agent."""
-    return f"Error: Legacy MCP tool execution disabled. Using Pydantic AI agent instead."
+    return "Error: Legacy MCP tool execution disabled. Using Pydantic AI agent instead."
 
 def execute_function_call_dict(tool_call_dict) -> str:
     """Execute a function call from a dictionary format and return the result as a string."""
@@ -250,7 +250,7 @@ def _handle_mcp_enhanced_query(user_message: str):
             console.print(char, end="")
         
         console.print()  # New line after streaming
-        console.print(f"[dim]✅ Task completed using MCP research tools[/dim]")
+        console.print("[dim]✅ Task completed using MCP research tools[/dim]")
         
         return {"success": True}
         
@@ -474,7 +474,7 @@ def _recursive_function_calling_loop(client, current_model, max_iterations=10):
                         conversation_history.append(error_response)
                 
                 # Continue the loop to check for more function calls
-                console.print(f"[dim]✅ Function calls completed. Checking for additional actions...[/dim]")
+                console.print("[dim]✅ Function calls completed. Checking for additional actions...[/dim]")
                 continue
         else:
             # No tool calls, store the response and exit the loop

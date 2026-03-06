@@ -9,7 +9,6 @@ with their respective linters (flake8, eslint, tsc).
 
 from pathlib import Path
 import subprocess
-import json
 
 
 def is_python_file(file_path: str) -> bool:

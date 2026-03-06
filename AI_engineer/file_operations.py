@@ -40,8 +40,8 @@ def create_file(path: str, content: str):
     # Security checks
     if any(part.startswith('~') for part in file_path.parts):
         raise ValueError("Home directory references not allowed")
-    normalized_path = normalize_path(str(file_path))
-    
+    normalize_path(str(file_path))  # validates path safety
+
     # Validate reasonable file size for operations
     if len(content) > 5_000_000:  # 5MB limit
         raise ValueError("File content exceeds 5MB size limit")

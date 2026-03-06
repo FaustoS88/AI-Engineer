@@ -164,7 +164,7 @@ client = get_client()
 # Pydantic AI MCP Integration
 # --------------------------------------------------------------------------------
 
-from .pydantic_mcp_integration import get_manager, init_pydantic_mcp
+from .pydantic_mcp_integration import get_manager, init_pydantic_mcp  # noqa: E402
 
 def get_pydantic_mcp_manager():
     """Return the Pydantic MCP manager instance."""

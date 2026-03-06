@@ -26,8 +26,6 @@ from pydantic_ai.tools import Tool
 from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from rich.console import Console
-from rich.spinner import Spinner
-from rich.live import Live
 
 console = Console()
 
@@ -453,10 +451,7 @@ Be helpful, accurate, and thorough in your responses."""
                 
                 # Step 1: Load new server configuration without recreating agent
                 console.print("[dim]Loading updated configuration...[/dim]")
-                old_server_count = len(self.mcp_servers)
-                
                 # Load the updated config
-                new_servers = []
                 new_server_names = []
                 
                 if self.config_path.exists():

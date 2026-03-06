@@ -3,7 +3,7 @@
 from rich.panel import Panel
 from rich.table import Table
 from .config import console, prompt_session, get_current_model
-from .providers import get_model_config, get_all_models, get_models_by_provider
+from .providers import get_model_config, get_all_models
 
 # --------------------------------------------------------------------------------
 # UI Components and Interface
