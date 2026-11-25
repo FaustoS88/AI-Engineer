@@ -245,12 +245,7 @@ def _handle_mcp_enhanced_query(user_message: str):
         # Add the assistant's response to conversation history
         conversation_history.append({"role": "assistant", "content": response})
         
-        # Stream the response character by character for the UI effect
-        for char in response:
-            console.print(char, end="")
-        
-        console.print()  # New line after streaming
-        console.print("[dim]✅ Task completed using MCP research tools[/dim]")
+        console.out(response, highlight=False)
         
         return {"success": True}
         

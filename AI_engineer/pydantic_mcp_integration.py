@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Pydantic AI MCP Integration with enhanced tool call logging.
+Pydantic AI MCP Integration.
 """
 
 import asyncio
@@ -29,123 +29,8 @@ from rich.console import Console
 
 console = Console()
 
-class MCPToolCallLogger:
-    """Enhanced logger for MCP tool calls with visual feedback."""
-    
-    def __init__(self, console: Console):
-        self.console = console
-        self.current_server = None
-        self.tool_call_count = 0
-        
-    def log_server_usage(self, server_name: str):
-        """Log which MCP server is being used."""
-        self.current_server = server_name
-        # Map technical names to user-friendly names
-        display_name = self._get_display_name(server_name)
-        self.console.print(f"⚡ [bold cyan]Using MCP server:[/bold cyan] [bold]{display_name}[/bold]")
-        
-    def _get_display_name(self, server_name: str) -> str:
-        """Convert technical server names to user-friendly display names."""
-        display_map = {
-            "github.com/upstash/context7-mcp": "Context7",
-            "brave-search": "Brave Search",
-            "Context7": "Context7",
-            "Brave Search": "Brave Search"
-        }
-        return display_map.get(server_name, server_name)
-        
-    def log_tool_call_start(self, tool_name: str, args: Dict[str, Any] = None):
-        """Log the start of a tool call."""
-        self.tool_call_count += 1
-        self.console.print(f"→ [bold yellow]{tool_name}[/bold yellow]", end="")
-        if args and len(str(args)) < 100:  # Show args if not too long
-            # Format args nicely
-            args_str = ", ".join([f"{k}='{v}'" for k, v in args.items()])
-            self.console.print(f" [dim]({args_str})[/dim]")
-        else:
-            self.console.print()
-            
-    def log_tool_call_success(self, tool_name: str, result_summary: str = None):
-        """Log successful tool call completion."""
-        checkmark = "✓"
-        if result_summary:
-            self.console.print(f"{checkmark} [bold green]{result_summary}[/bold green]")
-        else:
-            self.console.print(f"{checkmark} [bold green]{tool_name} completed[/bold green]")
-            
-    def log_tool_call_error(self, tool_name: str, error: str):
-        """Log tool call error."""
-        self.console.print(f"✗ [bold red]Error in {tool_name}: {error}[/bold red]")
-        
-    def log_mcp_session_start(self, server_count: int):
-        """Log the start of MCP session."""
-        if server_count > 0:
-            servers_text = "server" if server_count == 1 else "servers"
-            self.console.print(f"[dim]Starting MCP session with {server_count} {servers_text}...[/dim]")
-        
-    def log_mcp_session_end(self):
-        """Log the end of MCP session."""
-        if self.tool_call_count > 0:
-            calls_text = "call" if self.tool_call_count == 1 else "calls"
-            self.console.print(f"[dim]✅ MCP session completed with {self.tool_call_count} tool {calls_text}[/dim]")
-        self.tool_call_count = 0
-        self.current_server = None
-    
-    def parse_and_enhance_response(self, response: str, server_names: List[str]) -> str:
-        """Parse AI response and add visual MCP tool call logging."""
-        import re
-        
-        # Reset tool call count for this session
-        self.tool_call_count = 0
-        
-        # Patterns to detect tool usage in AI responses
-        patterns = {
-            'resolve-library-id': r'resolve-library-id.*?(?:libraryName|library).*?["\']([^"\']+)["\']',
-            'get-library-docs': r'get-library-docs.*?(?:context7CompatibleLibraryID|library).*?["\']([^"\']+)["\']',
-            'brave-search': r'(?:search|brave).*?(?:query|search).*?["\']([^"\']+)["\']'
-        }
-        
-        # Check if response mentions Context7 or library research
-        if any(keyword in response.lower() for keyword in ['context7', 'library', 'documentation', 'research']):
-            # Simulate Context7 usage
-            if 'Context7' in server_names or 'github.com/upstash/context7-mcp' in server_names:
-                self.log_server_usage('Context7')
-                
-                # Detect library resolution
-                if 'resolve' in response.lower() or 'library' in response.lower():
-                    self.log_tool_call_start('resolve-library-id')
-                    # Extract library name if possible
-                    for pattern_name, pattern in patterns.items():
-                        matches = re.findall(pattern, response, re.IGNORECASE)
-                        if matches and pattern_name == 'resolve-library-id':
-                            self.log_tool_call_success('resolve-library-id', f'Found library: /{matches[0]}')
-                            break
-                    else:
-                        self.log_tool_call_success('resolve-library-id', 'Library resolved successfully')
-                
-                # Detect documentation retrieval
-                if 'documentation' in response.lower() or 'docs' in response.lower():
-                    self.log_tool_call_start('get-library-docs')
-                    self.log_tool_call_success('get-library-docs', 'Retrieved focused documentation')
-        
-        # Check if response mentions search functionality
-        elif any(keyword in response.lower() for keyword in ['search', 'brave', 'web']):
-            if 'brave-search' in server_names:
-                self.log_server_usage('Brave Search')
-                self.log_tool_call_start('search')
-                self.log_tool_call_success('search', 'Search results retrieved')
-        
-        # Add completion logging if tools were used
-        if self.tool_call_count > 0:
-            self.log_mcp_session_end()
-        
-        return response
-
-# Global logger instance
-mcp_logger = MCPToolCallLogger(console)
-
 class PydanticMCPManager:
-    """Manages Pydantic AI Agent with MCP servers and enhanced logging functionality."""
+    """Manages Pydantic AI Agent with MCP servers."""
     
     def __init__(self, config_path: str = "mcp.config.json"):
         self.config_path = pathlib.Path(config_path)
@@ -155,7 +40,6 @@ class PydanticMCPManager:
         self._observer: Optional[Any] = None  # Observer instance for file watching
         self._lock = threading.Lock()
         self._initialized = False
-        self.logger = mcp_logger  # Use the global logger instance
         
     def _load_api_config(self) -> tuple[str, str, str]:
         """Load API configuration from environment."""
@@ -329,25 +213,9 @@ You have access to:
 1. File operations (read, create, edit files)
 2. External MCP tools for research and documentation
 
-IMPORTANT: When using MCP tools, ALWAYS be explicit about your process by following this format:
-
-🔍 RESEARCH PROCESS:
-→ [tool-name] (with parameters)
-✓ [brief result summary]
-
-For example:
-🔍 I'll research the latest FastAPI documentation for you.
-→ resolve-library-id (libraryName: 'fastapi')
-✓ Found library: /tiangolo/fastapi
-→ get-library-docs (context7CompatibleLibraryID: '/tiangolo/fastapi', topic: 'async operations')
-✓ Retrieved focused documentation on async database operations
-
-Then provide your complete answer based on the research.
-
 When using Context7 or other MCP tools:
 - Use proper arguments like {'libraryName': 'pydantic-ai'} for library searches
 - Always include required parameters in your tool calls
-- Show your tool usage process step by step
 - Be patient as tools may take time to respond
 
 Be helpful, accurate, and thorough in your responses."""
@@ -364,33 +232,20 @@ Be helpful, accurate, and thorough in your responses."""
                 return False
     
     async def query(self, message: str) -> str:
-        """Query the agent with enhanced MCP tool call logging."""
+        """Query the agent with its MCP servers running."""
         if not self.agent:
             if not self.initialize():
                 return "Error: Failed to initialize AI agent"
         
         try:
-            # Log MCP session start
             if self.mcp_servers:
-                self.logger.log_mcp_session_start(len(self.mcp_servers))
-                
-                # Show which servers are available
-                for i, server_name in enumerate(self.server_names):
-                    if i == 0:  # Typically the first server used for documentation queries
-                        self.logger.log_server_usage(server_name)
-            
-            # Enhanced system prompt to encourage detailed tool usage reporting
-            enhanced_message = self._enhance_message_for_logging(message)
+                count = len(self.mcp_servers)
+                servers_text = "server" if count == 1 else "servers"
+                console.print(f"[dim]Starting MCP session with {count} {servers_text}...[/dim]")
             
             # Use agent.run_mcp_servers() context manager
             async with self.agent.run_mcp_servers():
-                result = await self.agent.run(enhanced_message)
-                
-                # Parse response and add visual MCP tool call logging
-                if self.mcp_servers:
-                    enhanced_output = self.logger.parse_and_enhance_response(result.output, self.server_names)
-                    return enhanced_output
-                
+                result = await self.agent.run(message)
                 return result.output
                 
         except Exception as e:
@@ -398,12 +253,6 @@ Be helpful, accurate, and thorough in your responses."""
             import traceback
             traceback.print_exc()
             return f"Error processing query: {str(e)}"
-    
-    def _enhance_message_for_logging(self, message: str) -> str:
-        """Enhance the message to encourage detailed tool usage reporting."""
-        # Add a subtle instruction to be more explicit about tool usage
-        enhancement = "\n\nNote: Please be explicit about your research process when using external tools."
-        return message + enhancement
     
     def query_sync(self, message: str) -> str:
         """Synchronous wrapper for queries."""
