@@ -28,7 +28,7 @@ Usage:
     main()
 """
 
-__version__ = "2.0.0"
+__version__ = "0.2.0"
 __author__ = "AI Engineer Team"
 __description__ = "AI-powered coding assistant with multi-provider support"
 
